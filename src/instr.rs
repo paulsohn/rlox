@@ -78,9 +78,9 @@ pub struct ContextedInstrResult<'a> {
 impl<'a> fmt::Display for ContextedInstrResult<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.instr {
-            Good(Instr::Return) => write!(f, "RETURN"),
+            Good(Instr::Return) => write!(f, "Return"),
             Good(Instr::Constant { idx }) => {
-                write!(f, "CONSTANT {}('{}')", idx, self.consts.get(usize::from(*idx)).unwrap())
+                write!(f, "Constant {}('{}')", idx, self.consts.get(usize::from(*idx)).unwrap())
             },
 
             BadOp { bytes } => {

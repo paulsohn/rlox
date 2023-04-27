@@ -1,5 +1,6 @@
 use std::fmt;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Value(f64);
 
 impl Value {
