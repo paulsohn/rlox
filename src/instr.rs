@@ -7,8 +7,13 @@ use num_enum::{ FromPrimitive, IntoPrimitive };
 #[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive, IntoPrimitive)]
 #[repr(u8)]
 pub enum OpPrefix {
-    RETURN = 0,
-    CONSTANT,
+    CONSTANT = 0,
+    ADD,
+    SUBTRACT,
+    MULTIPLY,
+    DIVIDE,
+    NEGATE,
+    RETURN,
     #[num_enum(catch_all)]
     UNKNOWN(u8),
 }
@@ -21,8 +26,13 @@ impl fmt::Display for OpPrefix {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Instr {
-    Return,
     Constant{ idx: u8 },
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Negate,
+    Return,
 }
 
 pub enum InstrResult {
@@ -30,7 +40,7 @@ pub enum InstrResult {
     BadOp { bytes: Vec<u8>, },
     // BadContext
 }
-use InstrResult::{ Good, BadOp };
+use InstrResult::*;
 
 impl InstrResult {
     // inspired from https://doc.rust-lang.org/beta/src/core/str/validations.rs.html#36-70
@@ -42,10 +52,6 @@ impl InstrResult {
         // TODO: we might want try blocks here
         // to get BadOp and count bytes
         let return_val = match prefix {
-            OpPrefix::RETURN => {
-                // [RETURN]
-                (Good(Instr::Return), 1)
-            },
             OpPrefix::CONSTANT => {
                 // [CONSTANT] [CONST_IDX]
                 if let Some(&idx) = iter.next() {
@@ -57,6 +63,30 @@ impl InstrResult {
                     (BadOp { bytes: vec![prefix.into()] }, 1)
                 }
             },
+            OpPrefix::ADD => {
+                // [ADD]
+                (Good(Instr::Add), 1)
+            },
+            OpPrefix::SUBTRACT => {
+                // [SUBTRACT]
+                (Good(Instr::Subtract), 1)
+            },
+            OpPrefix::MULTIPLY => {
+                // [MULTIPLY]
+                (Good(Instr::Multiply), 1)
+            },
+            OpPrefix::DIVIDE => {
+                // [DIVIDE]
+                (Good(Instr::Divide), 1)
+            },
+            OpPrefix::NEGATE => {
+                // [NEGATE]
+                (Good(Instr::Negate), 1)
+            },
+            OpPrefix::RETURN => {
+                // [RETURN]
+                (Good(Instr::Return), 1)
+            },
             OpPrefix::UNKNOWN(byte) => {
                 (BadOp { bytes: vec![byte] }, 1)
             },
@@ -66,23 +96,30 @@ impl InstrResult {
     }
 
     pub fn with_context<'a>(&'a self, consts: &'a Vec<Value>) -> ContextedInstrResult<'a>{
-        ContextedInstrResult { instr: self, consts }
+        ContextedInstrResult { ires: self, consts }
     }
 }
 
 pub struct ContextedInstrResult<'a> {
-    instr: &'a InstrResult,
+    ires: &'a InstrResult,
     consts: &'a Vec<Value>,
 }
 
 impl<'a> fmt::Display for ContextedInstrResult<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self.instr {
-            Good(Instr::Return) => write!(f, "Return"),
-            Good(Instr::Constant { idx }) => {
-                write!(f, "Constant {}('{}')", idx, self.consts.get(usize::from(*idx)).unwrap())
+        match self.ires {
+            Good(instr) => match instr {
+                Instr::Constant { idx } => {
+                    write!(f, "Constant [{}] = {}", idx, self.consts.get(usize::from(*idx)).unwrap())
+                },
+                // TODO : a macro for this?
+                Instr::Add => { write!(f, "Add") },
+                Instr::Subtract => { write!(f, "Subtract") },
+                Instr::Multiply => { write!(f, "Multiply") },
+                Instr::Divide => { write!(f, "Divide") },
+                Instr::Negate => { write!(f, "Negate") },
+                Instr::Return => { write!(f, "Return") },
             },
-
             BadOp { bytes } => {
                 write!(f, "<BadOp {:02X?}>", bytes)
             },

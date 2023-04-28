@@ -29,7 +29,7 @@ impl<'a> VM<'a> {
             let (ires, len) = res.unwrap();
             #[cfg(debug_assertions)]
             {
-                println!("    {:?}", self.stack);
+                println!("    {:.3?}", self.stack);
 
                 // if self.ip should be a pointer, change this also
                 self.chunk.disasm(&ires, self.ip)
@@ -38,14 +38,41 @@ impl<'a> VM<'a> {
 
             match ires {
                 InstrResult::Good(instr) => match instr {
-                    Instr::Return => {
-                        let val = self.stack.pop().unwrap(); // unwrap_or(Value::Nil)
-                        println!("{}", val);
-                        return Ok(());
-                    },
                     Instr::Constant { idx } => {
                         let val = self.chunk.get_const(idx);
                         self.stack.push(val);
+                    },
+
+                    // TODO: macros for here
+                    Instr::Add => {
+                        let b = self.stack.pop().unwrap_or(Value::Nil);
+                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        self.stack.push(a + b); // Add trait for Value
+                    },
+                    Instr::Subtract => {
+                        let b = self.stack.pop().unwrap_or(Value::Nil);
+                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        self.stack.push(a - b); // Sub trait for Value
+                    },
+                    Instr::Multiply => {
+                        let b = self.stack.pop().unwrap_or(Value::Nil);
+                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        self.stack.push(a * b); // Mul trait for Value
+                    },
+                    Instr::Divide => {
+                        let b = self.stack.pop().unwrap_or(Value::Nil);
+                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        self.stack.push(a / b); // Div trait for Value
+                    },
+                    Instr::Negate => {
+                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        self.stack.push(-a); // Neg trait for Value
+                    }
+                    
+                    Instr::Return => {
+                        let val = self.stack.pop().unwrap_or(Value::Nil);
+                        println!("RESULT: {}", val);
+                        return Ok(());
                     },
                 },
                 // InstrResult::BadOp { bytes } => {},

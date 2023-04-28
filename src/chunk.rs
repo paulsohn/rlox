@@ -1,4 +1,4 @@
-use crate::instr::{ InstrResult };
+use crate::instr::{ InstrResult, OpPrefix };
 use crate::value::Value;
 
 use std::cmp::Ordering;
@@ -46,6 +46,7 @@ impl Chunk {
 
         self.code.push(byte.into());
     }
+
     pub fn add_const(&mut self, value: Value) -> u8 {
         let l = self.consts.len();
         self.consts.push(value);
@@ -53,6 +54,12 @@ impl Chunk {
         // return the index where the const was appended. should be byte-sized
         u8::try_from(l)
             .expect("const pool size should not exceed 256")
+    }
+
+    pub fn write_const(&mut self, value: Value, line: usize) {
+        let c = self.add_const(value);
+        self.write(OpPrefix::CONSTANT, line);
+        self.write(c, line);
     }
 
     pub fn get_const(&self, idx: u8) -> Value {
