@@ -8,6 +8,9 @@ use num_enum::{ FromPrimitive, IntoPrimitive };
 #[repr(u8)]
 pub enum OpPrefix {
     CONSTANT = 0,
+    NIL,
+    TRUE,
+    FALSE,
     ADD,
     SUBTRACT,
     MULTIPLY,
@@ -27,6 +30,12 @@ impl fmt::Display for OpPrefix {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Instr {
     Constant{ idx: u8 },
+    Nil,
+    True,
+    False,
+    Equal,
+    Greater,
+    Less,
     Add,
     Subtract,
     Multiply,
@@ -62,6 +71,18 @@ impl InstrResult {
                     // TODO: collect all bytes
                     (BadOp { bytes: vec![prefix.into()] }, 1)
                 }
+            },
+            OpPrefix::NIL => {
+                // [NIL]
+                (Good(Instr::Nil), 1)
+            },
+            OpPrefix::TRUE => {
+                // [NIL]
+                (Good(Instr::True), 1)
+            },
+            OpPrefix::FALSE => {
+                // [NIL]
+                (Good(Instr::False), 1)
             },
             OpPrefix::ADD => {
                 // [ADD]
@@ -113,6 +134,12 @@ impl<'a> fmt::Display for ContextedInstrResult<'a> {
                     write!(f, "Constant [{}] = {}", idx, self.consts.get(usize::from(*idx)).unwrap())
                 },
                 // TODO : a macro for this?
+                Instr::Nil => { write!(f, "Nil") },
+                Instr::True => { write!(f, "True") },
+                Instr::False => { write!(f, "False") },
+                Instr::Equal => { write!(f, "Equal") },
+                Instr::Greater => { write!(f, "Greater") },
+                Instr::Less => { write!(f, "Less") },
                 Instr::Add => { write!(f, "Add") },
                 Instr::Subtract => { write!(f, "Subtract") },
                 Instr::Multiply => { write!(f, "Multiply") },

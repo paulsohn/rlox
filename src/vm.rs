@@ -42,31 +42,73 @@ impl<'a> VM<'a> {
                         let val = self.chunk.get_const(idx);
                         self.stack.push(val);
                     },
+                    Instr::Nil => {
+                        self.stack.push(Value::Nil);
+                    },
+                    Instr::True => {
+                        self.stack.push(Value::Bool(true));
+                    },
+                    Instr::False => {
+                        self.stack.push(Value::Bool(false));
+                    },
+                    Instr::Equal => {
+                        let b = self.stack.pop().unwrap_or(Value::Nil);
+                        let a = self.stack.pop().unwrap_or(Value::Nil);
+
+                        self.stack.push(Value::Bool(a == b)); // PartialEq for Value
+                    },
+                    Instr::Greater => {
+                        let b = self.stack.pop().unwrap_or(Value::Nil);
+                        let a = self.stack.pop().unwrap_or(Value::Nil);
+
+                        self.stack.push(Value::Bool(a > b)); // PartialOrd for Value
+                    },
+                    Instr::Less => {
+                        let b = self.stack.pop().unwrap_or(Value::Nil);
+                        let a = self.stack.pop().unwrap_or(Value::Nil);
+
+                        self.stack.push(Value::Bool(a < b)); // PartialOrd for Value
+                    },
 
                     // TODO: macros for here
                     Instr::Add => {
                         let b = self.stack.pop().unwrap_or(Value::Nil);
                         let a = self.stack.pop().unwrap_or(Value::Nil);
-                        self.stack.push(a + b); // Add trait for Value
+                        match a.checked_add(b) {
+                            Ok(val) => self.stack.push(val),
+                            _ => return Err(InterpretError::RuntimeError) // TODO
+                        };
                     },
                     Instr::Subtract => {
                         let b = self.stack.pop().unwrap_or(Value::Nil);
                         let a = self.stack.pop().unwrap_or(Value::Nil);
-                        self.stack.push(a - b); // Sub trait for Value
+                        match a.checked_sub(b) {
+                            Ok(val) => self.stack.push(val),
+                            _ => return Err(InterpretError::RuntimeError) // TODO
+                        };
                     },
                     Instr::Multiply => {
                         let b = self.stack.pop().unwrap_or(Value::Nil);
                         let a = self.stack.pop().unwrap_or(Value::Nil);
-                        self.stack.push(a * b); // Mul trait for Value
+                        match a.checked_mul(b) {
+                            Ok(val) => self.stack.push(val),
+                            _ => return Err(InterpretError::RuntimeError) // TODO
+                        };
                     },
                     Instr::Divide => {
                         let b = self.stack.pop().unwrap_or(Value::Nil);
                         let a = self.stack.pop().unwrap_or(Value::Nil);
-                        self.stack.push(a / b); // Div trait for Value
+                        match a.checked_div(b) {
+                            Ok(val) => self.stack.push(val),
+                            _ => return Err(InterpretError::RuntimeError) // TODO
+                        };
                     },
                     Instr::Negate => {
                         let a = self.stack.pop().unwrap_or(Value::Nil);
-                        self.stack.push(-a); // Neg trait for Value
+                        match a.checked_neg() {
+                            Ok(val) => self.stack.push(val),
+                            _ => return Err(InterpretError::RuntimeError) // TODO
+                        }
                     }
                     
                     Instr::Return => {
