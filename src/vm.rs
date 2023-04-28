@@ -17,7 +17,15 @@ impl<'a> VM<'a> {
         }
     }
 
-    pub fn run(&mut self) -> InterpretResult{
+    fn stack_push<V>(&mut self, val: V) where V: Into<Value> {
+        self.stack.push(val.into());
+    }
+
+    fn stack_pop(&mut self) -> Value {
+        self.stack.pop().unwrap_or(Value::Nil)
+    }
+
+    pub fn run(&mut self) -> InterpretResult {
         loop {
             // Our VM is sequental: it just decode the next instruction at once.
             // real machines implement pipelining, and have different stages for fetching and decoding respectively.
@@ -40,79 +48,79 @@ impl<'a> VM<'a> {
                 InstrResult::Good(instr) => match instr {
                     Instr::Constant { idx } => {
                         let val = self.chunk.get_const(idx);
-                        self.stack.push(val);
+                        self.stack_push(val);
                     },
                     Instr::Nil => {
-                        self.stack.push(Value::Nil);
+                        self.stack_push(());
                     },
                     Instr::True => {
-                        self.stack.push(Value::Bool(true));
+                        self.stack_push(true);
                     },
                     Instr::False => {
-                        self.stack.push(Value::Bool(false));
+                        self.stack_push(false);
                     },
                     Instr::Equal => {
-                        let b = self.stack.pop().unwrap_or(Value::Nil);
-                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        let b = self.stack_pop();
+                        let a = self.stack_pop();
 
-                        self.stack.push(Value::Bool(a == b)); // PartialEq for Value
+                        self.stack_push(a == b); // PartialEq for Value
                     },
                     Instr::Greater => {
-                        let b = self.stack.pop().unwrap_or(Value::Nil);
-                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        let b = self.stack_pop();
+                        let a = self.stack_pop();
 
-                        self.stack.push(Value::Bool(a > b)); // PartialOrd for Value
+                        self.stack_push(a > b); // PartialOrd for Value
                     },
                     Instr::Less => {
-                        let b = self.stack.pop().unwrap_or(Value::Nil);
-                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        let b = self.stack_pop();
+                        let a = self.stack_pop();
 
-                        self.stack.push(Value::Bool(a < b)); // PartialOrd for Value
+                        self.stack_push(a < b); // PartialOrd for Value
                     },
 
                     // TODO: macros for here
                     Instr::Add => {
-                        let b = self.stack.pop().unwrap_or(Value::Nil);
-                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        let b = self.stack_pop();
+                        let a = self.stack_pop();
                         match a.checked_add(b) {
-                            Ok(val) => self.stack.push(val),
+                            Ok(val) => self.stack_push(val),
                             _ => return Err(InterpretError::RuntimeError) // TODO
                         };
                     },
                     Instr::Subtract => {
-                        let b = self.stack.pop().unwrap_or(Value::Nil);
-                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        let b = self.stack_pop();
+                        let a = self.stack_pop();
                         match a.checked_sub(b) {
-                            Ok(val) => self.stack.push(val),
+                            Ok(val) => self.stack_push(val),
                             _ => return Err(InterpretError::RuntimeError) // TODO
                         };
                     },
                     Instr::Multiply => {
-                        let b = self.stack.pop().unwrap_or(Value::Nil);
-                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        let b = self.stack_pop();
+                        let a = self.stack_pop();
                         match a.checked_mul(b) {
-                            Ok(val) => self.stack.push(val),
+                            Ok(val) => self.stack_push(val),
                             _ => return Err(InterpretError::RuntimeError) // TODO
                         };
                     },
                     Instr::Divide => {
-                        let b = self.stack.pop().unwrap_or(Value::Nil);
-                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        let b = self.stack_pop();
+                        let a = self.stack_pop();
                         match a.checked_div(b) {
-                            Ok(val) => self.stack.push(val),
+                            Ok(val) => self.stack_push(val),
                             _ => return Err(InterpretError::RuntimeError) // TODO
                         };
                     },
                     Instr::Negate => {
-                        let a = self.stack.pop().unwrap_or(Value::Nil);
+                        let a = self.stack_pop();
                         match a.checked_neg() {
-                            Ok(val) => self.stack.push(val),
+                            Ok(val) => self.stack_push(val),
                             _ => return Err(InterpretError::RuntimeError) // TODO
                         }
                     }
                     
                     Instr::Return => {
-                        let val = self.stack.pop().unwrap_or(Value::Nil);
+                        let val = self.stack_pop();
                         println!("RESULT: {}", val);
                         return Ok(());
                     },

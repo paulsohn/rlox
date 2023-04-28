@@ -140,6 +140,24 @@ impl PartialOrd for Value {
 
 // Conversions
 
+impl From<()> for Value {
+    fn from(_: ()) -> Value {
+        Value::Nil
+    }
+}
+
+impl From<f64> for Value {
+    fn from(num: f64) -> Value {
+        Value::Number(num)
+    }
+}
+
+impl From<bool> for Value {
+    fn from(b: bool) -> Value {
+        Value::Bool(b)
+    }
+}
+
 // impl From<Value> for f64 {
 //     fn from(value: Value) -> f64 {
 //         match value {

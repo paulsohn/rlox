@@ -72,42 +72,16 @@ impl InstrResult {
                     (BadOp { bytes: vec![prefix.into()] }, 1)
                 }
             },
-            OpPrefix::NIL => {
-                // [NIL]
-                (Good(Instr::Nil), 1)
-            },
-            OpPrefix::TRUE => {
-                // [NIL]
-                (Good(Instr::True), 1)
-            },
-            OpPrefix::FALSE => {
-                // [NIL]
-                (Good(Instr::False), 1)
-            },
-            OpPrefix::ADD => {
-                // [ADD]
-                (Good(Instr::Add), 1)
-            },
-            OpPrefix::SUBTRACT => {
-                // [SUBTRACT]
-                (Good(Instr::Subtract), 1)
-            },
-            OpPrefix::MULTIPLY => {
-                // [MULTIPLY]
-                (Good(Instr::Multiply), 1)
-            },
-            OpPrefix::DIVIDE => {
-                // [DIVIDE]
-                (Good(Instr::Divide), 1)
-            },
-            OpPrefix::NEGATE => {
-                // [NEGATE]
-                (Good(Instr::Negate), 1)
-            },
-            OpPrefix::RETURN => {
-                // [RETURN]
-                (Good(Instr::Return), 1)
-            },
+            OpPrefix::NIL => { (Good(Instr::Nil), 1) }, // [NIL]
+            OpPrefix::TRUE => { (Good(Instr::True), 1) }, // [TRUE]
+            OpPrefix::FALSE => { (Good(Instr::False), 1) }, // [FALSE]
+            OpPrefix::ADD => { (Good(Instr::Add), 1) }, // [ADD]
+            OpPrefix::SUBTRACT => { (Good(Instr::Subtract), 1) }, // [SUBTRACT]
+            OpPrefix::MULTIPLY => { (Good(Instr::Multiply), 1) }, // [MULTIPLY]
+            OpPrefix::DIVIDE => { (Good(Instr::Divide), 1) }, // [DIVIDE]
+            OpPrefix::NEGATE => { (Good(Instr::Negate), 1) }, // [NEGATE]
+            OpPrefix::RETURN => { (Good(Instr::Return), 1) }, // [RETURN]
+            
             OpPrefix::UNKNOWN(byte) => {
                 (BadOp { bytes: vec![byte] }, 1)
             },
@@ -121,6 +95,7 @@ impl InstrResult {
     }
 }
 
+
 pub struct ContextedInstrResult<'a> {
     ires: &'a InstrResult,
     consts: &'a Vec<Value>,
@@ -133,19 +108,19 @@ impl<'a> fmt::Display for ContextedInstrResult<'a> {
                 Instr::Constant { idx } => {
                     write!(f, "Constant [{}] = {}", idx, self.consts.get(usize::from(*idx)).unwrap())
                 },
-                // TODO : a macro for this?
-                Instr::Nil => { write!(f, "Nil") },
-                Instr::True => { write!(f, "True") },
-                Instr::False => { write!(f, "False") },
-                Instr::Equal => { write!(f, "Equal") },
-                Instr::Greater => { write!(f, "Greater") },
-                Instr::Less => { write!(f, "Less") },
-                Instr::Add => { write!(f, "Add") },
-                Instr::Subtract => { write!(f, "Subtract") },
-                Instr::Multiply => { write!(f, "Multiply") },
-                Instr::Divide => { write!(f, "Divide") },
-                Instr::Negate => { write!(f, "Negate") },
-                Instr::Return => { write!(f, "Return") },
+                // Instr::Nil => { write!(f, "Nil") },
+                // Instr::True => { write!(f, "True") },
+                // Instr::False => { write!(f, "False") },
+                // Instr::Equal => { write!(f, "Equal") },
+                // Instr::Greater => { write!(f, "Greater") },
+                // Instr::Less => { write!(f, "Less") },
+                // Instr::Add => { write!(f, "Add") },
+                // Instr::Subtract => { write!(f, "Subtract") },
+                // Instr::Multiply => { write!(f, "Multiply") },
+                // Instr::Divide => { write!(f, "Divide") },
+                // Instr::Negate => { write!(f, "Negate") },
+                // Instr::Return => { write!(f, "Return") },
+                _ => { write!(f, "{:?}", instr) },
             },
             BadOp { bytes } => {
                 write!(f, "<BadOp {:02X?}>", bytes)
