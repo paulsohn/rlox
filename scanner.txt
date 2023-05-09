@@ -1,0 +1,4 @@
+if (condition) return
+"value"
+
+1 + 2 * 3 - 4

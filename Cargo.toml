@@ -9,3 +9,4 @@ edition = "2021"
 
 [dependencies]
 num_enum = "0.5.11"
+peekmore = "1.2.1"

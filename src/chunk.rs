@@ -1,9 +1,10 @@
-use crate::instr::{ InstrResult, OpPrefix };
+use crate::instr::{ InstrResult, ContextedInstrResult, OpPrefix, next_instr_point };
 use crate::value::Value;
 
 use std::cmp::Ordering;
 use std::slice;
 
+#[derive(Clone)]
 pub struct Chunk {
     pub code: Vec<u8>,
     line_begins: Vec<usize>,
@@ -20,7 +21,7 @@ impl Chunk {
     }
 
     pub fn read(&self, offset: usize) -> Option<(InstrResult, usize)> {
-        InstrResult::next_instr_point(&mut self.code[offset..].iter())
+        next_instr_point(&mut self.code[offset..].iter())
     }
 
     pub fn write<B>(&mut self, byte: B, line: usize)
@@ -66,9 +67,12 @@ impl Chunk {
         *self.consts.get(Into::<usize>::into(idx)).unwrap()
     }
 
-    pub fn disasm(&self, res: &InstrResult, offset: usize){
+    pub fn disasm(&self, ires: &InstrResult, offset: usize){
         let line_no = self.line_begins.partition_point(|&x| x <= offset).wrapping_sub(1);
-        println!("{:04} {:4} {}", offset, line_no, res.with_context(&self.consts));
+        println!("{:04} {:4} {}",
+            offset, line_no,
+            ContextedInstrResult::new(ires, &self.consts)
+        );
     }
 
     pub fn disasm_all(&self, name: &str) {
@@ -76,7 +80,7 @@ impl Chunk {
 
         let mut prev_line_no = usize::MAX;
 
-        for (res, offset) in self.iter() {
+        for (ires, offset) in self.iter() {
             let line_no = self.line_begins.partition_point(|&x| x <= offset).wrapping_sub(1);
             
             let line = if prev_line_no == line_no {
@@ -86,7 +90,10 @@ impl Chunk {
                 format!("{:4}", line_no)
             };
 
-            println!("{:04} {} {}", offset, line, res.with_context(&self.consts));
+            println!("{:04} {} {}",
+                offset, line,
+                ContextedInstrResult::new(&ires, &self.consts)
+            );
         }
     }
 }
@@ -108,7 +115,7 @@ impl<'a> Iterator for CodeIterator<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         let prev_offset = self.offset;
 
-        let (res, len) = InstrResult::next_instr_point(&mut self.iter)?;
+        let (res, len) = next_instr_point(&mut self.iter)?;
         self.offset += len;
 
         Some((res, prev_offset))

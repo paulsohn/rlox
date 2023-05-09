@@ -1,15 +1,15 @@
 use crate::chunk::Chunk;
 use crate::value::Value;
-use crate::instr::{InstrResult, Instr};
+use crate::instr::{Instr};
 
-pub struct VM<'a> {
-    chunk: &'a mut Chunk,
+pub struct VM {
+    chunk: Chunk,
     ip: usize, // original clox uses pointer ip. here we only use code index of the chunk
     stack: Vec<Value>,
 }
 
-impl<'a> VM<'a> {
-    pub fn new(chunk: &'a mut Chunk) -> Self {
+impl VM {
+    pub fn new(chunk: Chunk) -> Self {
         VM {
             chunk,
             ip: 0,
@@ -44,8 +44,8 @@ impl<'a> VM<'a> {
             }
             self.ip += len; // instr ptr proceeds
 
-            match ires {
-                InstrResult::Good(instr) => match instr {
+            if let Ok(instr) = ires {
+                match instr {
                     Instr::Constant { idx } => {
                         let val = self.chunk.get_const(idx);
                         self.stack_push(val);
@@ -124,13 +124,16 @@ impl<'a> VM<'a> {
                         println!("RESULT: {}", val);
                         return Ok(());
                     },
-                },
-                // InstrResult::BadOp { bytes } => {},
-                _ => {
-                    return Err(InterpretError::RuntimeError);
                 }
+            } else { // else if let ?
+                return Err(InterpretError::RuntimeError);
             }
         }
+    }
+
+    pub fn interpret(&mut self) -> InterpretResult {
+        // todo
+        Ok(())
     }
 }
 

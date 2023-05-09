@@ -44,67 +44,67 @@ pub enum Instr {
     Return,
 }
 
-pub enum InstrResult {
-    Good(Instr),
+pub enum InstrError {
     BadOp { bytes: Vec<u8>, },
     // BadContext
 }
-use InstrResult::*;
+pub type InstrResult = Result<Instr, InstrError>;
 
-impl InstrResult {
-    // inspired from https://doc.rust-lang.org/beta/src/core/str/validations.rs.html#36-70
-    // TODO : can we automatically infer length from iterator advancement?
-    pub fn next_instr_point<'a, I: Iterator<Item = &'a u8>>(iter: &mut I) -> Option<(Self, usize)>
-    {
-        let prefix = OpPrefix::from(*iter.next()?); // if None == iter.next(), the instruction is None as expected
+use InstrError::*;
 
-        // TODO: we might want try blocks here
-        // to get BadOp and count bytes
-        let return_val = match prefix {
-            OpPrefix::CONSTANT => {
-                // [CONSTANT] [CONST_IDX]
-                if let Some(&idx) = iter.next() {
-                    (Good(Instr::Constant { idx }), 2)
-                    
-                    // TODO: check context to see if the constant exists
-                } else {
-                    // TODO: collect all bytes
-                    (BadOp { bytes: vec![prefix.into()] }, 1)
-                }
-            },
-            OpPrefix::NIL => { (Good(Instr::Nil), 1) }, // [NIL]
-            OpPrefix::TRUE => { (Good(Instr::True), 1) }, // [TRUE]
-            OpPrefix::FALSE => { (Good(Instr::False), 1) }, // [FALSE]
-            OpPrefix::ADD => { (Good(Instr::Add), 1) }, // [ADD]
-            OpPrefix::SUBTRACT => { (Good(Instr::Subtract), 1) }, // [SUBTRACT]
-            OpPrefix::MULTIPLY => { (Good(Instr::Multiply), 1) }, // [MULTIPLY]
-            OpPrefix::DIVIDE => { (Good(Instr::Divide), 1) }, // [DIVIDE]
-            OpPrefix::NEGATE => { (Good(Instr::Negate), 1) }, // [NEGATE]
-            OpPrefix::RETURN => { (Good(Instr::Return), 1) }, // [RETURN]
-            
-            OpPrefix::UNKNOWN(byte) => {
-                (BadOp { bytes: vec![byte] }, 1)
-            },
-        };
+// inspired from https://doc.rust-lang.org/beta/src/core/str/validations.rs.html#36-70
+// TODO : can we automatically infer length from iterator advancement?
+pub fn next_instr_point<'a, I: Iterator<Item = &'a u8>>(iter: &mut I) -> Option<(InstrResult, usize)>
+{
+    let prefix = OpPrefix::from(*iter.next()?); // if None == iter.next(), the instruction is None as expected
 
-        Some(return_val)
-    }
+    // TODO: we might want try blocks here
+    // to get BadOp and count bytes
+    let return_val = match prefix {
+        OpPrefix::CONSTANT => {
+            // [CONSTANT] [CONST_IDX]
+            if let Some(&idx) = iter.next() {
+                (Ok(Instr::Constant { idx }), 2)
+                
+                // TODO: check context to see if the constant exists
+            } else {
+                // TODO: collect all bytes
+                (Err(BadOp{ bytes: vec![prefix.into()] }), 1)
+            }
+        },
+        OpPrefix::NIL => { (Ok(Instr::Nil), 1) }, // [NIL]
+        OpPrefix::TRUE => { (Ok(Instr::True), 1) }, // [TRUE]
+        OpPrefix::FALSE => { (Ok(Instr::False), 1) }, // [FALSE]
+        OpPrefix::ADD => { (Ok(Instr::Add), 1) }, // [ADD]
+        OpPrefix::SUBTRACT => { (Ok(Instr::Subtract), 1) }, // [SUBTRACT]
+        OpPrefix::MULTIPLY => { (Ok(Instr::Multiply), 1) }, // [MULTIPLY]
+        OpPrefix::DIVIDE => { (Ok(Instr::Divide), 1) }, // [DIVIDE]
+        OpPrefix::NEGATE => { (Ok(Instr::Negate), 1) }, // [NEGATE]
+        OpPrefix::RETURN => { (Ok(Instr::Return), 1) }, // [RETURN]
+        
+        OpPrefix::UNKNOWN(byte) => {
+            (Err(BadOp{ bytes: vec![byte] }), 1)
+        },
+    };
 
-    pub fn with_context<'a>(&'a self, consts: &'a Vec<Value>) -> ContextedInstrResult<'a>{
-        ContextedInstrResult { ires: self, consts }
-    }
+    Some(return_val)
 }
-
 
 pub struct ContextedInstrResult<'a> {
     ires: &'a InstrResult,
     consts: &'a Vec<Value>,
 }
 
+impl<'a> ContextedInstrResult<'a> {
+    pub fn new(ires: &'a InstrResult, consts: &'a Vec<Value>) -> Self {
+        Self { ires, consts }
+    }
+}
+
 impl<'a> fmt::Display for ContextedInstrResult<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.ires {
-            Good(instr) => match instr {
+            Ok(instr) => match instr {
                 Instr::Constant { idx } => {
                     write!(f, "Constant [{}] = {}", idx, self.consts.get(usize::from(*idx)).unwrap())
                 },
@@ -122,8 +122,11 @@ impl<'a> fmt::Display for ContextedInstrResult<'a> {
                 // Instr::Return => { write!(f, "Return") },
                 _ => { write!(f, "{:?}", instr) },
             },
-            BadOp { bytes } => {
-                write!(f, "<BadOp {:02X?}>", bytes)
+            Err(err) => match err {
+                BadOp { bytes } => {
+                    write!(f, "<BadOp {:02X?}>", bytes)
+                },
+
             },
         }
     }
