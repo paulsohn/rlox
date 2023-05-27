@@ -1,6 +1,7 @@
 use crate::chunk::Chunk;
 use crate::value::Value;
-use crate::instr::{Instr};
+use crate::instr::Instr;
+use crate::compiler::compile;
 
 pub struct VM {
     chunk: Chunk,
@@ -25,7 +26,8 @@ impl VM {
         self.stack.pop().unwrap_or(Value::Nil)
     }
 
-    pub fn run(&mut self) -> InterpretResult {
+    /// run the instruction.
+    fn run(&mut self) -> InterpretResult {
         loop {
             // Our VM is sequental: it just decode the next instruction at once.
             // real machines implement pipelining, and have different stages for fetching and decoding respectively.
@@ -131,9 +133,13 @@ impl VM {
         }
     }
 
-    pub fn interpret(&mut self) -> InterpretResult {
-        // todo
-        Ok(())
+    /// mere combination of `compiler::compile` and `vm::run`.
+    /// compile source code `src` and run it immediately.
+    pub fn interpret(&mut self, src: &str) -> InterpretResult {
+        if let Some(chunk) = compile(src) {
+            self.chunk = chunk;
+            self.run()
+        } else { Err(InterpretError::CompileError) }
     }
 }
 
@@ -141,7 +147,7 @@ pub enum InterpretError {
     CompileError,
     RuntimeError,
 }
-type InterpretResult = Result<(), InterpretError>;
+pub type InterpretResult = Result<(), InterpretError>;
 
 // fn interpret(chunk: &mut Chunk) -> InterpretResult {
 //     let mut vm = VM::new(chunk);
